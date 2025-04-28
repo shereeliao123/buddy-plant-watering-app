@@ -12,7 +12,7 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img src="/src/components/fauget.png" alt="Logo" className="h-8 w-8" />
+            <img src="fauget.png" alt="Logo" className="h-8 w-8" />
             <h1 className="text-xl font-bold text-buddy-brown">
               Hi {user?.email?.split('@')[0]}!
             </h1>

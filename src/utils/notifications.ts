@@ -167,7 +167,7 @@ const showBrowserNotification = (title: string, body: string) => {
 
   new Notification(title, {
     body,
-    icon: '/src/components/fauget.png'
+    icon: 'fauget.png'
   });
 };
 

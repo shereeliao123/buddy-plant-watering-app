@@ -1,8 +1,8 @@
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data.text(),
-    icon: '/src/components/fauget.png',
-    badge: '/src/components/fauget.png',
+    icon: '/fauget.png',
+    badge: '/fauget.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
