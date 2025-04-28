@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Quicksand', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+  }
+  
+  .font-serif {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+  }
+  
+  body {
+    @apply antialiased;
+  }
+  
+  .dark {
+    color-scheme: dark;
+  }
+}
+
+/* Animation for water droplet effect */
+@keyframes droplet {
+  0% {
+    transform: scale(0);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-droplet {
+  animation: droplet 0.5s ease-out forwards;
+}
