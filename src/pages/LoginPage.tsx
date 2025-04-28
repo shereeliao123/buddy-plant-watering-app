@@ -76,7 +76,7 @@ const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div className="text-center">
           <div className="flex justify-center">
-            <img src="/fauget.png" alt="Logo" className="h-24 w-24" />
+            <img src="/src/components/fauget.png" alt="Logo" className="h-24 w-24" />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-buddy-brown">
             {isSignUp ? 'Create your account' : 'Welcome back'}

@@ -5,6 +5,7 @@ import { Plant } from '../types/plantTypes';
 import { Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { checkAndNotifyPlantWatering } from '../utils/notifications';
 
 const PlantList: React.FC = () => {
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -28,13 +29,23 @@ const PlantList: React.FC = () => {
 
         if (plantsError) throw plantsError;
 
-        setPlants(plantsData.map(plant => ({
+        const formattedPlants = plantsData.map(plant => ({
           ...plant,
           wateringFrequencyDays: plant.watering_frequency_days,
           wateringHistory: plant.watering_history
             .map((wh: any) => wh.watered_at)
             .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime())
-        })));
+        }));
+
+        setPlants(formattedPlants);
+
+        // Check each plant for watering notifications immediately
+        console.log('Checking plants for notifications:', formattedPlants.length);
+        formattedPlants.forEach(plant => {
+          console.log(`Checking plant: ${plant.name}`);
+          console.log('Watering history:', plant.wateringHistory);
+          checkAndNotifyPlantWatering(plant);
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -43,11 +54,19 @@ const PlantList: React.FC = () => {
     };
 
     fetchPlants();
+
+    // Set up an interval to check plants every minute
+    const interval = setInterval(() => {
+      fetchPlants();
+    }, 60000); // 60000 ms = 1 minute
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   const calculateDaysUntilWatering = (plant: Plant): number => {
     const mostRecentWateringDate = plant.wateringHistory?.[0];
-    if (!mostRecentWateringDate) return plant.wateringFrequencyDays;
+    if (!mostRecentWateringDate) return 0; // If never watered, needs water now
     
     const lastWateredDate = new Date(mostRecentWateringDate);
     const today = new Date();
@@ -96,14 +115,19 @@ const PlantList: React.FC = () => {
         if (insertError) throw insertError;
       }
 
-      setPlants(plants.map(plant => 
+      const updatedPlants = plants.map(plant => 
         plant.id === updatedPlant.id ? {
           ...updatedPlant,
           wateringHistory: updatedPlant.wateringHistory.sort((a, b) => 
             new Date(b).getTime() - new Date(a).getTime()
           )
         } : plant
-      ));
+      );
+
+      setPlants(updatedPlants);
+
+      // Check for notifications after updating a plant
+      checkAndNotifyPlantWatering(updatedPlant);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update plant');
     }
@@ -128,11 +152,16 @@ const PlantList: React.FC = () => {
 
       if (error) throw error;
 
-      setPlants([{ 
+      const addedPlant = { 
         ...data, 
         wateringFrequencyDays: data.watering_frequency_days, 
         wateringHistory: [] 
-      }, ...plants]);
+      };
+
+      setPlants([addedPlant, ...plants]);
+
+      // Check for notifications after adding a new plant
+      checkAndNotifyPlantWatering(addedPlant);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add plant');
     }
