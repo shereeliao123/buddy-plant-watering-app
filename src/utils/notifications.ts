@@ -159,16 +159,54 @@ const subscribeToPushNotifications = async () => {
   }
 };
 
+// Get the notification history from localStorage
+const getNotificationHistory = (): Record<string, string> => {
+  const history = localStorage.getItem('plantNotificationHistory');
+  return history ? JSON.parse(history) : {};
+};
+
+// Save notification history to localStorage
+const saveNotificationHistory = (history: Record<string, string>) => {
+  localStorage.setItem('plantNotificationHistory', JSON.stringify(history));
+};
+
+// Check if a notification has been sent today for a specific plant
+const hasNotifiedToday = (plantId: string): boolean => {
+  const history = getNotificationHistory();
+  const lastNotification = history[plantId];
+  
+  if (!lastNotification) return false;
+  
+  const today = new Date();
+  const lastNotificationDate = new Date(lastNotification);
+  
+  return today.toDateString() === lastNotificationDate.toDateString();
+};
+
+// Update notification history for a plant
+const updateNotificationHistory = (plantId: string) => {
+  const history = getNotificationHistory();
+  history[plantId] = new Date().toISOString();
+  saveNotificationHistory(history);
+};
+
 // Show a browser notification
-const showBrowserNotification = (title: string, body: string) => {
+const showBrowserNotification = (title: string, body: string, plantId: string) => {
   if (!isNotificationSupported || Notification.permission !== 'granted') {
+    return;
+  }
+
+  if (hasNotifiedToday(plantId)) {
+    console.log(`Already notified about ${plantId} today, skipping notification`);
     return;
   }
 
   new Notification(title, {
     body,
-    icon: 'fauget.png'
+    icon: '/fauget.png'
   });
+
+  updateNotificationHistory(plantId);
 };
 
 // Check if a plant needs watering today and show notification
@@ -195,7 +233,7 @@ export const checkAndNotifyPlantWatering = async (plant: Plant) => {
 
   if (!lastWateredDate) {
     console.log(`${plant.name} has never been watered - sending notification`);
-    showBrowserNotification('Time to Water Your Plant!', `${plant.name} needs watering today! 🌿💧`);
+    showBrowserNotification('Time to Water Your Plant!', `${plant.name} needs watering today! 🌿💧`, plant.id);
     return;
   }
 
@@ -218,7 +256,7 @@ export const checkAndNotifyPlantWatering = async (plant: Plant) => {
 
   if (daysUntilWatering <= 0) {
     console.log(`Sending notification for ${plant.name}`);
-    showBrowserNotification('Time to Water Your Plant!', `${plant.name} needs watering today! 🌿💧`);
+    showBrowserNotification('Time to Water Your Plant!', `${plant.name} needs watering today! 🌿💧`, plant.id);
 
     // Send push notification if available
     if (!isStackBlitz) {
