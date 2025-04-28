@@ -159,54 +159,101 @@ const subscribeToPushNotifications = async () => {
   }
 };
 
-// Get the notification history from localStorage
-const getNotificationHistory = (): Record<string, string> => {
-  const history = localStorage.getItem('plantNotificationHistory');
-  return history ? JSON.parse(history) : {};
+interface NotificationHistory {
+  lastNotified: string;
+  count: number;
+}
+
+// Get the notification history from localStorage with improved type safety
+const getNotificationHistory = (): Record<string, NotificationHistory> => {
+  try {
+    const history = localStorage.getItem('plantNotificationHistory');
+    return history ? JSON.parse(history) : {};
+  } catch (error) {
+    console.error('Error parsing notification history:', error);
+    return {};
+  }
 };
 
-// Save notification history to localStorage
-const saveNotificationHistory = (history: Record<string, string>) => {
-  localStorage.setItem('plantNotificationHistory', JSON.stringify(history));
+// Save notification history to localStorage with validation
+const saveNotificationHistory = (history: Record<string, NotificationHistory>) => {
+  try {
+    localStorage.setItem('plantNotificationHistory', JSON.stringify(history));
+  } catch (error) {
+    console.error('Error saving notification history:', error);
+  }
 };
 
 // Check if a notification has been sent today for a specific plant
 const hasNotifiedToday = (plantId: string): boolean => {
-  const history = getNotificationHistory();
-  const lastNotification = history[plantId];
-  
-  if (!lastNotification) return false;
-  
-  const today = new Date();
-  const lastNotificationDate = new Date(lastNotification);
-  
-  return today.toDateString() === lastNotificationDate.toDateString();
+  try {
+    const history = getNotificationHistory();
+    const record = history[plantId];
+    
+    if (!record) return false;
+    
+    const today = new Date();
+    const lastNotificationDate = new Date(record.lastNotified);
+    
+    return today.toDateString() === lastNotificationDate.toDateString();
+  } catch (error) {
+    console.error('Error checking notification history:', error);
+    return false;
+  }
 };
 
-// Update notification history for a plant
+// Update notification history for a plant with count tracking
 const updateNotificationHistory = (plantId: string) => {
-  const history = getNotificationHistory();
-  history[plantId] = new Date().toISOString();
-  saveNotificationHistory(history);
+  try {
+    const history = getNotificationHistory();
+    const today = new Date();
+    const record = history[plantId] || { lastNotified: '', count: 0 };
+    
+    const lastNotificationDate = record.lastNotified ? new Date(record.lastNotified) : null;
+    
+    if (!lastNotificationDate || today.toDateString() !== lastNotificationDate.toDateString()) {
+      record.count = 1;
+    } else {
+      record.count++;
+    }
+    
+    history[plantId] = {
+      lastNotified: today.toISOString(),
+      count: record.count
+    };
+    
+    saveNotificationHistory(history);
+    console.log(`Updated notification history for plant ${plantId}:`, history[plantId]);
+  } catch (error) {
+    console.error('Error updating notification history:', error);
+  }
 };
 
-// Show a browser notification
+// Show a browser notification with improved error handling and logging
 const showBrowserNotification = (title: string, body: string, plantId: string) => {
   if (!isNotificationSupported || Notification.permission !== 'granted') {
+    console.log('Notifications not supported or permission not granted');
     return;
   }
 
-  if (hasNotifiedToday(plantId)) {
-    console.log(`Already notified about ${plantId} today, skipping notification`);
-    return;
+  try {
+    if (hasNotifiedToday(plantId)) {
+      console.log(`Already notified about plant ${plantId} today, skipping notification`);
+      return;
+    }
+
+    new Notification(title, {
+      body,
+      icon: '/fauget.png',
+      tag: `plant-${plantId}`, // Prevent duplicate notifications
+      renotify: false // Don't show duplicate notifications
+    });
+
+    updateNotificationHistory(plantId);
+    console.log(`Notification sent for plant ${plantId}`);
+  } catch (error) {
+    console.error('Error showing notification:', error);
   }
-
-  new Notification(title, {
-    body,
-    icon: '/fauget.png'
-  });
-
-  updateNotificationHistory(plantId);
 };
 
 // Check if a plant needs watering today and show notification
@@ -216,70 +263,82 @@ export const checkAndNotifyPlantWatering = async (plant: Plant) => {
     return;
   }
 
-  const notificationsEnabled = await getNotificationPreference();
-  if (!notificationsEnabled) {
-    console.log('Notifications disabled by user');
-    return;
-  }
+  try {
+    const notificationsEnabled = await getNotificationPreference();
+    if (!notificationsEnabled) {
+      console.log('Notifications disabled by user');
+      return;
+    }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const mostRecentWateringDate = plant.wateringHistory?.[0];
-  const lastWateredDate = mostRecentWateringDate ? new Date(mostRecentWateringDate) : null;
+    const mostRecentWateringDate = plant.wateringHistory?.[0];
+    const lastWateredDate = mostRecentWateringDate ? new Date(mostRecentWateringDate) : null;
 
-  console.log(`Checking plant: ${plant.name}`);
-  console.log('Last watered date:', lastWateredDate?.toLocaleDateString() || 'Never');
+    console.log(`Checking plant: ${plant.name}`);
+    console.log('Last watered date:', lastWateredDate?.toLocaleDateString() || 'Never');
 
-  if (!lastWateredDate) {
-    console.log(`${plant.name} has never been watered - sending notification`);
-    showBrowserNotification('Time to Water Your Plant!', `${plant.name} needs watering today! 🌿💧`, plant.id);
-    return;
-  }
+    if (!lastWateredDate) {
+      console.log(`${plant.name} has never been watered - sending notification`);
+      showBrowserNotification(
+        'Time to Water Your Plant!',
+        `${plant.name} needs watering today! 🌿💧`,
+        plant.id
+      );
+      return;
+    }
 
-  lastWateredDate.setHours(0, 0, 0, 0);
+    lastWateredDate.setHours(0, 0, 0, 0);
 
-  const daysSinceWatered = Math.floor(
-    (today.getTime() - lastWateredDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+    const daysSinceWatered = Math.floor(
+      (today.getTime() - lastWateredDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-  const daysUntilWatering = plant.wateringFrequencyDays - daysSinceWatered;
+    const daysUntilWatering = plant.wateringFrequencyDays - daysSinceWatered;
 
-  console.log({
-    plantName: plant.name,
-    lastWatered: lastWateredDate.toLocaleDateString(),
-    daysSinceWatered,
-    wateringFrequency: plant.wateringFrequencyDays,
-    daysUntilWatering,
-    needsWateringToday: daysUntilWatering <= 0
-  });
+    console.log({
+      plantName: plant.name,
+      lastWatered: lastWateredDate.toLocaleDateString(),
+      daysSinceWatered,
+      wateringFrequency: plant.wateringFrequencyDays,
+      daysUntilWatering,
+      needsWateringToday: daysUntilWatering <= 0
+    });
 
-  if (daysUntilWatering <= 0) {
-    console.log(`Sending notification for ${plant.name}`);
-    showBrowserNotification('Time to Water Your Plant!', `${plant.name} needs watering today! 🌿💧`, plant.id);
+    if (daysUntilWatering <= 0) {
+      console.log(`Sending notification for ${plant.name}`);
+      showBrowserNotification(
+        'Time to Water Your Plant!',
+        `${plant.name} needs watering today! 🌿💧`,
+        plant.id
+      );
 
-    // Send push notification if available
-    if (!isStackBlitz) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        
-        if (subscription) {
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
-              subscription,
-              userId: user.id,
-              message: `${plant.name} needs watering today! 🌿💧`
-            })
-          });
+      // Send push notification if available
+      if (!isStackBlitz) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          
+          if (subscription) {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify({
+                subscription,
+                userId: user.id,
+                message: `${plant.name} needs watering today! 🌿💧`
+              })
+            });
+          }
         }
       }
     }
+  } catch (error) {
+    console.error('Error checking plant watering status:', error);
   }
 };
