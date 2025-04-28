@@ -5,7 +5,7 @@ import { Plant } from '../types/plantTypes';
 import { Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { checkAndNotifyPlantWatering } from '../utils/notifications';
+import { checkAndNotifyPlantWatering, checkAllPlantsOnce } from '../utils/notifications';
 
 const PlantList: React.FC = () => {
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -39,13 +39,8 @@ const PlantList: React.FC = () => {
 
         setPlants(formattedPlants);
 
-        // Check each plant for watering notifications immediately
-        console.log('Checking plants for notifications:', formattedPlants.length);
-        formattedPlants.forEach(plant => {
-          console.log(`Checking plant: ${plant.name}`);
-          console.log('Watering history:', plant.wateringHistory);
-          checkAndNotifyPlantWatering(plant);
-        });
+        // Check all plants once per session
+        checkAllPlantsOnce(formattedPlants);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -54,14 +49,6 @@ const PlantList: React.FC = () => {
     };
 
     fetchPlants();
-
-    // Set up an interval to check plants every minute
-    const interval = setInterval(() => {
-      fetchPlants();
-    }, 60000); // 60000 ms = 1 minute
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
   }, []);
 
   const calculateDaysUntilWatering = (plant: Plant): number => {
