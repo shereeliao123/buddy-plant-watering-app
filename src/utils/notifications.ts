@@ -7,6 +7,9 @@ const isStackBlitz = window.location.hostname.includes('stackblitz');
 // Check if browser supports notifications
 const isNotificationSupported = 'Notification' in window && 'serviceWorker' in navigator;
 
+// Session-level flag to track if notification check has run in current session
+let notificationCheckCompletedForSession = false;
+
 // Get notification preference from Supabase users table
 export const getNotificationPreference = async (): Promise<boolean> => {
   try {
@@ -164,6 +167,9 @@ interface NotificationHistory {
   count: number;
 }
 
+// Session storage to track which plants have been notified in current session
+const sessionNotifiedPlants = new Set<string>();
+
 // Get the notification history from localStorage with improved type safety
 const getNotificationHistory = (): Record<string, NotificationHistory> => {
   try {
@@ -187,6 +193,11 @@ const saveNotificationHistory = (history: Record<string, NotificationHistory>) =
 // Check if a notification has been sent today for a specific plant
 const hasNotifiedToday = (plantId: string): boolean => {
   try {
+    // Check if already notified in current session
+    if (sessionNotifiedPlants.has(plantId)) {
+      return true;
+    }
+
     const history = getNotificationHistory();
     const record = history[plantId];
     
@@ -205,6 +216,9 @@ const hasNotifiedToday = (plantId: string): boolean => {
 // Update notification history for a plant with count tracking
 const updateNotificationHistory = (plantId: string) => {
   try {
+    // Add to session tracking
+    sessionNotifiedPlants.add(plantId);
+
     const history = getNotificationHistory();
     const today = new Date();
     const record = history[plantId] || { lastNotified: '', count: 0 };
@@ -258,6 +272,11 @@ const showBrowserNotification = (title: string, body: string, plantId: string) =
 
 // Check if a plant needs watering today and show notification
 export const checkAndNotifyPlantWatering = async (plant: Plant) => {
+  // Skip if already checked in this session
+  if (sessionNotifiedPlants.has(plant.id)) {
+    return;
+  }
+
   if (!isNotificationSupported) {
     console.log('Notifications not supported');
     return;
@@ -341,4 +360,32 @@ export const checkAndNotifyPlantWatering = async (plant: Plant) => {
   } catch (error) {
     console.error('Error checking plant watering status:', error);
   }
+};
+
+// New function to check all plants once per session
+export const checkAllPlantsOnce = async (plants: Plant[]) => {
+  // Skip if already checked in this session
+  if (notificationCheckCompletedForSession) {
+    console.log('Notification check already completed for this session');
+    return;
+  }
+  
+  // Mark session check as completed
+  notificationCheckCompletedForSession = true;
+  
+  console.log('Performing one-time session check for all plants');
+  
+  // Process all plants
+  for (const plant of plants) {
+    await checkAndNotifyPlantWatering(plant);
+  }
+  
+  console.log('Session notification check completed');
+};
+
+// Reset session check (useful for testing or manual triggers)
+export const resetSessionCheck = () => {
+  notificationCheckCompletedForSession = false;
+  sessionNotifiedPlants.clear();
+  console.log('Session notification check status reset');
 };
