@@ -14,6 +14,9 @@ const WateringIndicator: React.FC<WateringIndicatorProps> = ({ daysUntilWatering
   } else if (daysUntilWatering === 0) {
     statusColor = 'bg-yellow-100 border-yellow-200 text-yellow-800';
     statusText = 'Water today';
+  } else if (daysUntilWatering === 1) {
+    statusColor = 'bg-blue-100 border-blue-200 text-blue-800';
+    statusText = 'Water in 1 day';
   } else {
     statusColor = 'bg-blue-100 border-blue-200 text-blue-800';
     statusText = `Water in ${daysUntilWatering} days`;
