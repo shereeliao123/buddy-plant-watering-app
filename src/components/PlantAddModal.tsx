@@ -1,35 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Plant } from '../types/plantTypes';
+import { supabase } from '../lib/supabase';
+import SearchableDropdown from './SearchableDropdown';
 
 interface PlantAddModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (newPlant: Omit<Plant, 'id'>) => void;
 }
-
-const PLANT_SPECIES = [
-  'Aloe Vera',
-  'Bird of Paradise (Strelitzia)',
-  'Boston Fern (Nephrolepis exaltata)',
-  'Bougainvillea',
-  'Chinese Money Plant (Pilea peperomioides)',
-  'Fiddle Leaf Fig (Ficus lyrata)',
-  'Geranium',
-  'Hydrangea',
-  'Jade Plant (Crassula ovata)',
-  'Lavender',
-  'Lemon Tree',
-  'Monstera Deliciosa',
-  'Peace Lily (Spathiphyllum)',
-  'Pothos (Epipremnum aureum)',
-  'Rosemary',
-  'Rubber Plant (Ficus elastica)',
-  'Snake Plant (Sansevieria)',
-  'Spider Plant (Chlorophytum comosum)',
-  'Succulents',
-  'ZZ Plant (Zamioculcas zamiifolia)'
-];
 
 const PlantAddModal: React.FC<PlantAddModalProps> = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -38,6 +17,37 @@ const PlantAddModal: React.FC<PlantAddModalProps> = ({ isOpen, onClose, onSave }
     location: 'Indoor' as const,
     wateringFrequencyDays: '',
   });
+
+  const [plantSpecies, setPlantSpecies] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPlantSpecies = async () => {
+      if (!isOpen) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data, error } = await supabase
+          .from('plant_species')
+          .select('name')
+          .order('name');
+
+        if (error) throw error;
+
+        setPlantSpecies(data.map(item => item.name));
+      } catch (err) {
+        console.error('Error fetching plant species:', err);
+        setError('Failed to load plant species');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlantSpecies();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -71,6 +81,12 @@ const PlantAddModal: React.FC<PlantAddModalProps> = ({ isOpen, onClose, onSave }
         <h2 className="text-xl font-bold mb-4 text-buddy-brown">Add New Plant</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-md bg-red-50 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-buddy-brown mb-1">
               Plant Name
@@ -89,19 +105,14 @@ const PlantAddModal: React.FC<PlantAddModalProps> = ({ isOpen, onClose, onSave }
             <label className="block text-sm font-medium text-buddy-brown mb-1">
               Species
             </label>
-            <select
+            <SearchableDropdown
+              options={plantSpecies}
               value={formData.species}
-              onChange={(e) => setFormData({ ...formData, species: e.target.value })}
-              className="w-full px-3 py-2 border border-buddy-brown/20 rounded-md focus:outline-none focus:ring-2 focus:ring-buddy-green"
-              required
-            >
-              <option value="" disabled>Select species</option>
-              {PLANT_SPECIES.map((species) => (
-                <option key={species} value={species}>
-                  {species}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFormData({ ...formData, species: value })}
+              placeholder="Search species..."
+              isLoading={loading}
+              error={error}
+            />
           </div>
           
           <div>
