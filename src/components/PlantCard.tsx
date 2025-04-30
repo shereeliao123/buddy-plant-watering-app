@@ -3,6 +3,8 @@ import { Plant } from '../types/plantTypes';
 import WateringIndicator from './WateringIndicator';
 import WateringTracker from './WateringTracker';
 import PlantEditModal from './PlantEditModal';
+import PlantCareModal from './PlantCareModal';
+import { Sprout } from 'lucide-react';
 
 interface PlantCardProps {
   plant: Plant;
@@ -11,9 +13,9 @@ interface PlantCardProps {
 }
 
 const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePlant }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCareModalOpen, setIsCareModalOpen] = useState(false);
   
-  // Calculate days until watering based on most recent watering date
   const today = new Date();
   const mostRecentWateringDate = plant.wateringHistory?.[0];
   const lastWateredDate = mostRecentWateringDate ? new Date(mostRecentWateringDate) : null;
@@ -32,7 +34,6 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
 
   const handleDateClick = (clickedDate: Date, isRemoving: boolean) => {
     if (isRemoving) {
-      // Remove the specific clicked date from history
       const updatedHistory = plant.wateringHistory.filter(date => {
         const historyDate = new Date(date);
         return historyDate.toDateString() !== clickedDate.toDateString();
@@ -45,7 +46,6 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
       };
       onUpdatePlant(updatedPlant);
     } else {
-      // Add new watering date
       const newDate = clickedDate.toISOString();
       const updatedPlant = {
         ...plant,
@@ -57,11 +57,16 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Check if the click target is part of the WateringTracker component
     const isWateringTrackerClick = (e.target as HTMLElement).closest('.watering-tracker');
-    if (!isWateringTrackerClick) {
-      setIsModalOpen(true);
+    const isSummaryButtonClick = (e.target as HTMLElement).closest('.summary-button');
+    if (!isWateringTrackerClick && !isSummaryButtonClick) {
+      setIsEditModalOpen(true);
     }
+  };
+
+  const handleSummaryClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsCareModalOpen(true);
   };
 
   return (
@@ -96,6 +101,13 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
                 Last watered: <span className="font-medium">{formattedDate}</span>
               </p>
             </div>
+            <button
+              onClick={handleSummaryClick}
+              className="summary-button p-2 text-buddy-brown hover:text-buddy-green transition-colors duration-200 rounded-full hover:bg-buddy-pink/30"
+              aria-label="View plant care instructions"
+            >
+              <Sprout className="h-5 w-5" />
+            </button>
           </div>
 
           <div className="watering-tracker">
@@ -110,10 +122,16 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
 
       <PlantEditModal
         plant={plant}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
         onSave={onUpdatePlant}
         onDelete={onDeletePlant}
+      />
+
+      <PlantCareModal
+        isOpen={isCareModalOpen}
+        onClose={() => setIsCareModalOpen(false)}
+        species={plant.species}
       />
     </>
   );
