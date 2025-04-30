@@ -85,7 +85,7 @@ const NotificationSettingsPage: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <Bell className="h-5 w-5 text-buddy-brown" />
                 <div>
-                  <h3 className="font-medium text-buddy-brown">In-browser Notifications</h3>
+                  <h3 className="font-medium text-buddy-brown">Push Notifications</h3>
                   <p className="text-sm text-gray-600">Get reminders when your plants need watering</p>
                 </div>
               </div>
