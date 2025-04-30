@@ -91,7 +91,7 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">
-                Water every <span className="font-medium">{plant.wateringFrequencyDays} days</span>
+                Water every <span className="font-medium">{plant.wateringFrequencyDays} {plant.wateringFrequencyDays === 1 ? 'day' : 'days'}</span>
               </p>
               <p className="text-sm text-gray-500">
                 Last watered: <span className="font-medium">{formattedDate}</span>
