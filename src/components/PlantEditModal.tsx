@@ -117,30 +117,14 @@ const PlantEditModal: React.FC<PlantEditModalProps> = ({ plant, isOpen, onClose,
             <label className="block text-sm font-medium text-buddy-brown mb-1">
               Location
             </label>
-            <div className="flex rounded-lg border border-buddy-brown/20 p-1">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, location: 'Indoor' })}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                  formData.location === 'Indoor'
-                    ? 'bg-buddy-pink/30 text-buddy-brown'
-                    : 'text-buddy-brown/70 hover:text-buddy-brown'
-                }`}
-              >
-                Indoor
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, location: 'Outdoor' })}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                  formData.location === 'Outdoor'
-                    ? 'bg-buddy-brown/10 text-buddy-brown'
-                    : 'text-buddy-brown/70 hover:text-buddy-brown'
-                }`}
-              >
-                Outdoor
-              </button>
-            </div>
+            <input
+              type="text"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              className="w-full px-3 py-2 border border-buddy-brown/20 rounded-md focus:outline-none focus:ring-2 focus:ring-buddy-green"
+              required
+              placeholder="Enter location (e.g., Living Room, Patio)"
+            />
           </div>
           
           <div>

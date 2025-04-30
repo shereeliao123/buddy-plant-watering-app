@@ -49,55 +49,60 @@ const PlantCareModal: React.FC<PlantCareModalProps> = ({ isOpen, onClose, specie
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg m-4 relative animate-[fadeIn_0.2s_ease-in-out]">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-buddy-brown hover:text-buddy-brown/70 transition-colors"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 md:p-0">
+      <div 
+        className="bg-white rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col relative animate-[fadeIn_0.2s_ease-in-out] overflow-hidden"
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-buddy-brown">
+            {species} Care Guide
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-buddy-brown hover:text-buddy-brown/70 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-        <h2 className="text-xl font-bold mb-6 text-buddy-brown pr-8">
-          {species} Care Guide
-        </h2>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-buddy-brown"></div>
-          </div>
-        ) : instructions ? (
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold text-buddy-brown mb-2">Watering Requirements</h3>
-              <p className="text-gray-600">{instructions.watering}</p>
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-buddy-brown"></div>
             </div>
+          ) : instructions ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold text-buddy-brown mb-2">Watering Requirements</h3>
+                <p className="text-gray-600">{instructions.watering}</p>
+              </div>
 
-            <div>
-              <h3 className="font-semibold text-buddy-brown mb-2">Sunlight Conditions</h3>
-              <p className="text-gray-600">{instructions.sunlight}</p>
-            </div>
+              <div>
+                <h3 className="font-semibold text-buddy-brown mb-2">Sunlight Conditions</h3>
+                <p className="text-gray-600">{instructions.sunlight}</p>
+              </div>
 
-            <div>
-              <h3 className="font-semibold text-buddy-brown mb-2">Soil Preferences</h3>
-              <p className="text-gray-600">{instructions.soil}</p>
-            </div>
+              <div>
+                <h3 className="font-semibold text-buddy-brown mb-2">Soil Preferences</h3>
+                <p className="text-gray-600">{instructions.soil}</p>
+              </div>
 
-            <div>
-              <h3 className="font-semibold text-buddy-brown mb-2">Temperature Range</h3>
-              <p className="text-gray-600">{instructions.temperature}</p>
-            </div>
+              <div>
+                <h3 className="font-semibold text-buddy-brown mb-2">Temperature Range</h3>
+                <p className="text-gray-600">{instructions.temperature}</p>
+              </div>
 
-            <div>
-              <h3 className="font-semibold text-buddy-brown mb-2">Seasonal Care Tips</h3>
-              <p className="text-gray-600">{instructions.seasonal}</p>
+              <div>
+                <h3 className="font-semibold text-buddy-brown mb-2">Seasonal Care Tips</h3>
+                <p className="text-gray-600">{instructions.seasonal}</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-red-600">
-            Failed to load care instructions. Please try again.
-          </div>
-        )}
+          ) : (
+            <div className="text-red-600">
+              Failed to load care instructions. Please try again.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

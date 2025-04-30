@@ -82,12 +82,8 @@ const PlantCard: React.FC<PlantCardProps> = ({ plant, onUpdatePlant, onDeletePla
           </div>
           
           <div className="flex items-center gap-2 mb-4">
-            <p className="text-sm text-gray-600 italic">{plant.species}</p>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              plant.location === 'Indoor' 
-                ? 'bg-buddy-pink/30 text-buddy-brown' 
-                : 'bg-buddy-brown/10 text-buddy-brown'
-            }`}>
+            <p className="text-sm text-[#1a8e26] italic">{plant.species}</p>
+            <span className="text-xs px-2 py-1 rounded-full bg-buddy-brown/10 text-buddy-brown">
               {plant.location}
             </span>
           </div>
